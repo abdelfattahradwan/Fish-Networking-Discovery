@@ -9,7 +9,7 @@ namespace FishNet.Discovery
 		[SerializeField]
 		private NetworkDiscovery networkDiscovery;
 
-		private readonly List<IPEndPoint> _endPoints = new();
+		private readonly List<IPEndPoint> _endPoints = new List<IPEndPoint>();
 
 		private Vector2 _serversListScrollVector;
 
