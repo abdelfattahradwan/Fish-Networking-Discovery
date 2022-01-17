@@ -168,7 +168,7 @@ namespace FishNet.Discovery
 
 				var result = await _clientUdpClient.ReceiveAsync();
 
-				var response = BitConverter.ToBoolean(result.Buffer);
+				var response = BitConverter.ToBoolean(result.Buffer, 0);
 
 				if (response) ServerFoundCallback?.Invoke(result.RemoteEndPoint);
 			}
