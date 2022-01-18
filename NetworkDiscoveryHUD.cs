@@ -25,7 +25,7 @@ namespace FishNet.Discovery
 
 		private void OnGUI()
 		{
-			var buttonHeight = GUILayout.Height(35.0f);
+			var buttonHeight = GUILayout.Height(30.0f);
 
 			using (new GUILayout.AreaScope(new Rect(Screen.width - 240.0f - 10.0f, 10.0f, 240.0f, Screen.height - 20.0f)))
 			{

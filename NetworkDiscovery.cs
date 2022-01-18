@@ -1,5 +1,6 @@
 ﻿using FishNet.Managing;
 using FishNet.Managing.Logging;
+using FishNet.Transporting;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -20,13 +21,36 @@ namespace FishNet.Discovery
 		[SerializeField]
 		private float discoveryInterval;
 
+		[SerializeField]
+		private bool automatic;
+
 		private UdpClient _serverUdpClient;
 		private UdpClient _clientUdpClient;
 
+		public bool IsAdvertising => _serverUdpClient != null;
+
+		public bool IsSearching => _clientUdpClient != null;
+
 		public event Action<IPEndPoint> ServerFoundCallback;
+
+		private void Start()
+		{
+			if (automatic)
+			{
+				InstanceFinder.ServerManager.OnServerConnectionState += ServerConnectionStateChangedHandler;
+
+				InstanceFinder.ClientManager.OnClientConnectionState += ClientConnectionStateChangedHandler;
+
+				StartSearchingForServers();
+			}
+		}
 
 		private void OnDisable()
 		{
+			InstanceFinder.ServerManager.OnServerConnectionState -= ServerConnectionStateChangedHandler;
+
+			InstanceFinder.ClientManager.OnClientConnectionState -= ClientConnectionStateChangedHandler;
+
 			StopAdvertisingServer();
 
 			StopSearchingForServers();
@@ -34,6 +58,10 @@ namespace FishNet.Discovery
 
 		private void OnDestroy()
 		{
+			InstanceFinder.ServerManager.OnServerConnectionState -= ServerConnectionStateChangedHandler;
+
+			InstanceFinder.ClientManager.OnClientConnectionState -= ClientConnectionStateChangedHandler;
+
 			StopAdvertisingServer();
 
 			StopSearchingForServers();
@@ -41,10 +69,50 @@ namespace FishNet.Discovery
 
 		private void OnApplicationQuit()
 		{
+			InstanceFinder.ServerManager.OnServerConnectionState -= ServerConnectionStateChangedHandler;
+
+			InstanceFinder.ClientManager.OnClientConnectionState -= ClientConnectionStateChangedHandler;
+
 			StopAdvertisingServer();
 
 			StopSearchingForServers();
 		}
+
+		#region Connection State Handlers
+
+		private void ServerConnectionStateChangedHandler(ServerConnectionStateArgs args)
+		{
+			if (args.ConnectionState == LocalConnectionStates.Starting)
+			{
+				StopSearchingForServers();
+			}
+			else if (args.ConnectionState == LocalConnectionStates.Started)
+			{
+				StartAdvertisingServer();
+			}
+			else if (args.ConnectionState == LocalConnectionStates.Stopping)
+			{
+				StopAdvertisingServer();
+			}
+			else if (args.ConnectionState == LocalConnectionStates.Stopped)
+			{
+				StartSearchingForServers();
+			}
+		}
+
+		private void ClientConnectionStateChangedHandler(ClientConnectionStateArgs args)
+		{
+			if (args.ConnectionState == LocalConnectionStates.Starting)
+			{
+				StopSearchingForServers();
+			}
+			else if (args.ConnectionState == LocalConnectionStates.Stopped)
+			{
+				StartSearchingForServers();
+			}
+		}
+
+		#endregion
 
 		#region Server
 
@@ -168,9 +236,12 @@ namespace FishNet.Discovery
 
 				var result = await _clientUdpClient.ReceiveAsync();
 
-				var response = BitConverter.ToBoolean(result.Buffer, 0);
+				if (BitConverter.ToBoolean(result.Buffer, 0))
+				{
+					ServerFoundCallback?.Invoke(result.RemoteEndPoint);
 
-				if (response) ServerFoundCallback?.Invoke(result.RemoteEndPoint);
+					StopSearchingForServers();
+				}
 			}
 		}
 
