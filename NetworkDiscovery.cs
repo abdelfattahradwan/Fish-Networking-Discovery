@@ -10,27 +10,64 @@ using UnityEngine;
 
 namespace FishNet.Discovery
 {
+	/// <summary>
+	/// A component that advertises a server or searches for servers.
+	/// </summary>
 	public sealed class NetworkDiscovery : MonoBehaviour
 	{
+		/// <summary>
+		/// A string that differentiates your application/game from others.
+		/// <b>Must not</b> be null, empty, or blank.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("A string that differentiates your application/game from others. Must not be null, empty, or blank.")]
 		private string secret;
 
+		/// <summary>
+		/// The port number used by this <see cref="NetworkDiscovery"/> component.
+		/// <b>Must</b> be different from the one used by the <seealso cref="Transport"/>.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("The port number used by this NetworkDiscovery component. Must be different from the one used by the Transport.")]
 		private ushort port;
 
+		/// <summary>
+		/// How often does this <see cref="NetworkDiscovery"/> component advertises a server or searches for servers.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("How often does this NetworkDiscovery component advertises a server or searches for servers.")]
 		private float discoveryInterval;
 
+		/// <summary>
+		/// Whether this <see cref="NetworkDiscovery"/> component will automatically start/stop? <b>Setting this to true is recommended.</b>
+		/// </summary>
 		[SerializeField]
+		[Tooltip("Whether this NetworkDiscovery component will automatically start/stop? Setting this to true is recommended.")]
 		private bool automatic;
 
+		/// <summary>
+		/// The <see cref="UdpClient"/> used to advertise the server.
+		/// </summary>
 		private UdpClient _serverUdpClient;
+
+		/// <summary>
+		/// The <see cref="UdpClient"/> used to search for servers.
+		/// </summary>
 		private UdpClient _clientUdpClient;
 
+		/// <summary>
+		/// Whether this <see cref="NetworkDiscovery"/> component is currently advertising a server or not.
+		/// </summary>
 		public bool IsAdvertising => _serverUdpClient != null;
 
+		/// <summary>
+		/// Whether this <see cref="NetworkDiscovery"/> component is currently searching for servers or not.
+		/// </summary>
 		public bool IsSearching => _clientUdpClient != null;
 
+		/// <summary>
+		/// An <see cref="Action"/> that is invoked by this <seealso cref="NetworkDiscovery"/> component whenever a server is found.
+		/// </summary>
 		public event Action<IPEndPoint> ServerFoundCallback;
 
 		private void Start()
@@ -116,6 +153,9 @@ namespace FishNet.Discovery
 
 		#region Server
 
+		/// <summary>
+		/// Makes this <see cref="NetworkDiscovery"/> component start advertising a server.
+		/// </summary>
 		public void StartAdvertisingServer()
 		{
 			if (!InstanceFinder.IsServer)
@@ -143,6 +183,9 @@ namespace FishNet.Discovery
 			if (NetworkManager.StaticCanLog(LoggingType.Common)) Debug.Log("Started advertising server.", this);
 		}
 
+		/// <summary>
+		/// Makes this <see cref="NetworkDiscovery"/> component <i>immediately</i> stop advertising the server it is currently advertising.
+		/// </summary>
 		public void StopAdvertisingServer()
 		{
 			if (_serverUdpClient == null) return;
@@ -177,6 +220,9 @@ namespace FishNet.Discovery
 
 		#region Client
 
+		/// <summary>
+		/// Makes this <see cref="NetworkDiscovery"/> component start searching for servers.
+		/// </summary>
 		public void StartSearchingForServers()
 		{
 			if (InstanceFinder.IsServer)
@@ -211,6 +257,9 @@ namespace FishNet.Discovery
 			if (NetworkManager.StaticCanLog(LoggingType.Common)) Debug.Log("Started searching for servers.", this);
 		}
 
+		/// <summary>
+		/// Makes this <see cref="NetworkDiscovery"/> component <i>immediately</i> stop searching for servers.
+		/// </summary>
 		public void StopSearchingForServers()
 		{
 			if (_clientUdpClient == null) return;

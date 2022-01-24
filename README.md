@@ -44,5 +44,5 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 ### Planned Features
 
 - [x] Automatically start/stop advertising server
-- [x] Automatically remove servers that are no longer alive
-- [x] Introduce Unity coroutines for all `NetworkDiscovery` methods
+- [ ] Automatically remove servers that are no longer alive
+- [ ] Introduce Unity coroutines for all `NetworkDiscovery` methods

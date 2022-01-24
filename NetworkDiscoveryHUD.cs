@@ -42,18 +42,28 @@ namespace FishNet.Discovery
 
 				using (new GUILayout.HorizontalScope())
 				{
-					if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartAdvertisingServer();
-
-					if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopAdvertisingServer();
+					if (networkDiscovery.IsAdvertising)
+					{
+						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopAdvertisingServer();
+					}
+					else
+					{
+						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartAdvertisingServer();
+					}
 				}
 
 				GUILayout.Box("Searching");
 
 				using (new GUILayout.HorizontalScope())
 				{
-					if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartSearchingForServers();
-
-					if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopSearchingForServers();
+					if (networkDiscovery.IsSearching)
+					{
+						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopSearchingForServers();
+					}
+					else
+					{
+						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartSearchingForServers();
+					}
 				}
 
 				if (_endPoints.Count > 0)
