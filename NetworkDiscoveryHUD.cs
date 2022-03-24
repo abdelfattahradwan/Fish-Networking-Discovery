@@ -25,7 +25,7 @@ namespace FishNet.Discovery
 
 		private void OnGUI()
 		{
-			var buttonHeight = GUILayout.Height(30.0f);
+			GUILayoutOption buttonHeight = GUILayout.Height(30.0f);
 
 			using (new GUILayout.AreaScope(new Rect(Screen.width - 240.0f - 10.0f, 10.0f, 240.0f, Screen.height - 20.0f)))
 			{
@@ -72,9 +72,9 @@ namespace FishNet.Discovery
 
 					using (new GUILayout.ScrollViewScope(_serversListScrollVector))
 					{
-						for (var i = 0; i < _endPoints.Count; i++)
+						for (int i = 0; i < _endPoints.Count; i++)
 						{
-							var ipAddress = _endPoints[i].Address.ToString();
+							string ipAddress = _endPoints[i].Address.ToString();
 
 							if (GUILayout.Button(ipAddress))
 							{

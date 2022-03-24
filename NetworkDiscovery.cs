@@ -172,6 +172,13 @@ namespace FishNet.Discovery
 				return;
 			}
 
+			if (port == InstanceFinder.TransportManager.Transport.GetPort())
+			{
+				if (NetworkManager.StaticCanLog(LoggingType.Warning)) Debug.LogWarning("Unable to start advertising server on the same port as the transport.", this);
+
+				return;
+			}
+
 			_serverUdpClient = new UdpClient(port)
 			{
 				EnableBroadcast = true,
@@ -203,13 +210,13 @@ namespace FishNet.Discovery
 			{
 				await Task.Delay(TimeSpan.FromSeconds(discoveryInterval));
 
-				var result = await _serverUdpClient.ReceiveAsync();
+				UdpReceiveResult result = await _serverUdpClient.ReceiveAsync();
 
-				var receivedSecret = Encoding.UTF8.GetString(result.Buffer);
+				string receivedSecret = Encoding.UTF8.GetString(result.Buffer);
 
 				if (receivedSecret == secret)
 				{
-					var okBytes = BitConverter.GetBytes(true);
+					byte[] okBytes = BitConverter.GetBytes(true);
 
 					await _serverUdpClient.SendAsync(okBytes, okBytes.Length, result.RemoteEndPoint);
 				}
@@ -273,9 +280,9 @@ namespace FishNet.Discovery
 
 		private async void SearchForServersAsync()
 		{
-			var secretBytes = Encoding.UTF8.GetBytes(secret);
+			byte[] secretBytes = Encoding.UTF8.GetBytes(secret);
 
-			var endPoint = new IPEndPoint(IPAddress.Broadcast, port);
+			IPEndPoint endPoint = new IPEndPoint(IPAddress.Broadcast, port);
 
 			while (_clientUdpClient != null)
 			{
@@ -283,7 +290,7 @@ namespace FishNet.Discovery
 
 				await _clientUdpClient.SendAsync(secretBytes, secretBytes.Length, endPoint);
 
-				var result = await _clientUdpClient.ReceiveAsync();
+				UdpReceiveResult result = await _clientUdpClient.ReceiveAsync();
 
 				if (BitConverter.ToBoolean(result.Buffer, 0))
 				{
