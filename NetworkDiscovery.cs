@@ -119,19 +119,19 @@ namespace FishNet.Discovery
 
 		private void ServerConnectionStateChangedHandler(ServerConnectionStateArgs args)
 		{
-			if (args.ConnectionState == LocalConnectionStates.Starting)
+			if (args.ConnectionState == LocalConnectionState.Starting)
 			{
 				StopSearchingForServers();
 			}
-			else if (args.ConnectionState == LocalConnectionStates.Started)
+			else if (args.ConnectionState == LocalConnectionState.Started)
 			{
 				StartAdvertisingServer();
 			}
-			else if (args.ConnectionState == LocalConnectionStates.Stopping)
+			else if (args.ConnectionState == LocalConnectionState.Stopping)
 			{
 				StopAdvertisingServer();
 			}
-			else if (args.ConnectionState == LocalConnectionStates.Stopped)
+			else if (args.ConnectionState == LocalConnectionState.Stopped)
 			{
 				StartSearchingForServers();
 			}
@@ -139,11 +139,11 @@ namespace FishNet.Discovery
 
 		private void ClientConnectionStateChangedHandler(ClientConnectionStateArgs args)
 		{
-			if (args.ConnectionState == LocalConnectionStates.Starting)
+			if (args.ConnectionState == LocalConnectionState.Starting)
 			{
 				StopSearchingForServers();
 			}
-			else if (args.ConnectionState == LocalConnectionStates.Stopped)
+			else if (args.ConnectionState == LocalConnectionState.Stopped)
 			{
 				StartSearchingForServers();
 			}
