@@ -46,3 +46,7 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 - [x] Automatically start/stop advertising server
 - [ ] Automatically remove servers that are no longer alive
 - [ ] Introduce Unity coroutines for all `NetworkDiscovery` methods
+
+### Donating
+
+If you found my project helpful, I would greatly appreciate your support through a [donation](https://ko-fi.com/winterboltgames) to help me continue improving and maintaining it!
