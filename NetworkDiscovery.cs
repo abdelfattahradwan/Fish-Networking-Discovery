@@ -76,6 +76,11 @@ namespace FishNet.Discovery
 		/// </summary>
 		private List<IPEndPoint> foundIPEndPoints = new();
 
+		/// <summary>
+		/// This list stores all the previously found <see cref="IPEndPoint"/>s, so that they are not considered as "found" again when a new network discovery is run.
+		/// </summary>
+		private List<IPEndPoint> previouslyFoundIPEndPoints = new();
+
 		private void Start()
 		{
 			if (automatic)
@@ -93,7 +98,24 @@ namespace FishNet.Discovery
 			if (foundIPEndPoints.Count > 0) {
 				// Invoke the ServerFoundCallback with every IP address in the list.
 				foreach (IPEndPoint foundIPEndPoint in foundIPEndPoints) {
-					ServerFoundCallback?.Invoke(foundIPEndPoint);
+					// Compare the address of the found endpoint with every previously found endpoint. If it matches any, do not invoke the ServerFoundCallback for it.
+					bool previouslyFound = false;
+
+					foreach (IPEndPoint previouslyFoundEndPoint in previouslyFoundIPEndPoints) {
+						if (previouslyFoundEndPoint.Address.ToString() == foundIPEndPoint.Address.ToString()) {
+                            previouslyFound = true;
+							break;
+						}
+					}
+
+					if (previouslyFound) {
+						continue;
+					}
+					else {
+						ServerFoundCallback?.Invoke(foundIPEndPoint);
+
+						previouslyFoundIPEndPoints.Add(foundIPEndPoint);
+					}
 				}
 
 				// Now clear all the IP addresses.
@@ -272,6 +294,8 @@ namespace FishNet.Discovery
 				return;
 			}
 
+			previouslyFoundIPEndPoints.Clear();
+
 			_clientUdpClient = new UdpClient()
 			{
 				EnableBroadcast = true,
@@ -289,6 +313,8 @@ namespace FishNet.Discovery
 		public void StopSearchingForServers()
 		{
 			if (_clientUdpClient == null) return;
+
+			previouslyFoundIPEndPoints.Clear();
 
 			_clientUdpClient.Close();
 
@@ -316,8 +342,6 @@ namespace FishNet.Discovery
 					if (!foundIPEndPoints.Contains(result.RemoteEndPoint)) {
 						foundIPEndPoints.Add(result.RemoteEndPoint);
 					}
-
-					StopSearchingForServers();
 				}
 			}
 		}
