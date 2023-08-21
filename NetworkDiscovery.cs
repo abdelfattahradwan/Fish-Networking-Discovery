@@ -2,6 +2,7 @@
 using FishNet.Managing.Logging;
 using FishNet.Transporting;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -70,6 +71,11 @@ namespace FishNet.Discovery
 		/// </summary>
 		public event Action<IPEndPoint> ServerFoundCallback;
 
+		/// <summary>
+		/// This list stores all the found <see cref="IPEndPoint"/>s that have been discovered by the worker thread to be processed by the main thread in the Update() function.
+		/// </summary>
+		private List<IPEndPoint> foundIPEndPoints = new();
+
 		private void Start()
 		{
 			if (automatic)
@@ -79,6 +85,19 @@ namespace FishNet.Discovery
 				InstanceFinder.ClientManager.OnClientConnectionState += ClientConnectionStateChangedHandler;
 
 				StartSearchingForServers();
+			}
+		}
+
+		private void Update() {
+			// See if we have found any IPEndPoints, and if we have, invoke the ServerFoundCallback event.
+			if (foundIPEndPoints.Count > 0) {
+				// Invoke the ServerFoundCallback with every IP address in the list.
+				foreach (IPEndPoint foundIPEndPoint in foundIPEndPoints) {
+					ServerFoundCallback?.Invoke(foundIPEndPoint);
+				}
+
+				// Now clear all the IP addresses.
+				foundIPEndPoints.Clear();
 			}
 		}
 
@@ -294,7 +313,9 @@ namespace FishNet.Discovery
 
 				if (BitConverter.ToBoolean(result.Buffer, 0))
 				{
-					ServerFoundCallback?.Invoke(result.RemoteEndPoint);
+					if (!foundIPEndPoints.Contains(result.RemoteEndPoint)) {
+						foundIPEndPoints.Add(result.RemoteEndPoint);
+					}
 
 					StopSearchingForServers();
 				}
