@@ -17,7 +17,7 @@ namespace FishNet.Discovery
 		{
 			if (networkDiscovery == null) networkDiscovery = FindObjectOfType<NetworkDiscovery>();
 
-			networkDiscovery.ServerFoundCallback += (endPoint) =>
+			networkDiscovery.ServerFoundCallback += endPoint =>
 			{
 				if (!_endPoints.Contains(endPoint)) _endPoints.Add(endPoint);
 			};
@@ -44,11 +44,11 @@ namespace FishNet.Discovery
 				{
 					if (networkDiscovery.IsAdvertising)
 					{
-						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopAdvertisingServer();
+						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopSearchingOrAdvertising();
 					}
 					else
 					{
-						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartAdvertisingServer();
+						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.AdvertiseServer();
 					}
 				}
 
@@ -58,35 +58,32 @@ namespace FishNet.Discovery
 				{
 					if (networkDiscovery.IsSearching)
 					{
-						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopSearchingForServers();
+						if (GUILayout.Button("Stop", buttonHeight)) networkDiscovery.StopSearchingOrAdvertising();
 					}
 					else
 					{
-						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.StartSearchingForServers();
+						if (GUILayout.Button("Start", buttonHeight)) networkDiscovery.SearchForServers();
 					}
 				}
 
-				if (_endPoints.Count > 0)
+				if (_endPoints.Count < 1) return;
+
+				GUILayout.Box("Servers");
+				
+				_serversListScrollVector = GUILayout.BeginScrollView(_serversListScrollVector);
+                
+				foreach (IPEndPoint endPoint in _endPoints)
 				{
-					GUILayout.Box("Servers");
+					string ipAddress = endPoint.Address.ToString();
 
-					using (new GUILayout.ScrollViewScope(_serversListScrollVector))
-					{
-						for (int i = 0; i < _endPoints.Count; i++)
-						{
-							string ipAddress = _endPoints[i].Address.ToString();
+					if (!GUILayout.Button(ipAddress)) continue;
 
-							if (GUILayout.Button(ipAddress))
-							{
-								networkDiscovery.StopAdvertisingServer();
+					networkDiscovery.StopSearchingOrAdvertising();
 
-								networkDiscovery.StopSearchingForServers();
-
-								InstanceFinder.ClientManager.StartConnection(ipAddress);
-							}
-						}
-					}
+					InstanceFinder.ClientManager.StartConnection(ipAddress);
 				}
+
+				GUILayout.EndScrollView();
 			}
 		}
 	}
