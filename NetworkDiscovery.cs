@@ -10,34 +10,76 @@ using UnityEngine;
 
 namespace FishNet.Discovery
 {
+	/// <summary>
+	/// Allows clients to find servers on the local network.
+	/// </summary>
 	public sealed class NetworkDiscovery : MonoBehaviour
 	{
+		/// <summary>
+		/// Used to send a response to a client.
+		/// </summary>
 		private static readonly byte[] OkBytes = { 1 };
 
+		/// <summary>
+		/// NetworkManager to use.
+		/// </summary>
 		private NetworkManager _networkManager;
 
+		/// <summary>
+		/// Secret to use when advertising or searching for servers.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("Secret to use when advertising or searching for servers.")]
 		private string secret;
 
+		/// <summary>
+		/// Byte-representation of the secret to use when advertising or searching for servers.
+		/// </summary>
 		private byte[] _secretBytes;
 
+		/// <summary>
+		/// Port to use when advertising or searching for servers.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("Port to use when advertising or searching for servers.")]
 		private ushort port;
 
+		/// <summary>
+		/// How long to wait for a response when advertising or searching for servers.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("How long to wait for a response when advertising or searching for servers.")]
 		private float searchTimeout;
 
+		/// <summary>
+		/// If true, will automatically start advertising or searching for servers when the NetworkManager starts or stops.
+		/// </summary>
 		[SerializeField]
 		private bool automatic;
 
+		/// <summary>
+		/// SynchronizationContext of the main thread.
+		/// </summary>
 		private SynchronizationContext _mainThreadSynchronizationContext;
 
+		/// <summary>
+		/// Used to cancel the search or advertising.
+		/// </summary>
 		private CancellationTokenSource _cancellationTokenSource;
 
+		/// <summary>
+		/// Called when a server is found.
+		/// </summary>
 		public event Action<IPEndPoint> ServerFoundCallback;
 
+		/// <summary>
+		/// True if the server is being advertised.
+		/// </summary>
 		public bool IsAdvertising { get; private set; }
 
+		/// <summary>
+		/// True if the client is searching for servers.
+		/// </summary>
 		public bool IsSearching { get; private set; }
 
 		private void Awake()
@@ -89,6 +131,9 @@ namespace FishNet.Discovery
 			if (Input.GetKeyDown(KeyCode.C)) SearchForServers();
 		}
 
+		/// <summary>
+		/// Shuts down the NetworkDiscovery.
+		/// </summary>
 		private void Shutdown()
 		{
 			if (_networkManager != null)
@@ -127,6 +172,9 @@ namespace FishNet.Discovery
 			}
 		}
 
+		/// <summary>
+		/// Advertises the server on the local network.
+		/// </summary>
 		public void AdvertiseServer()
 		{
 			if (IsAdvertising)
@@ -141,6 +189,9 @@ namespace FishNet.Discovery
 			AdvertiseServerAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
 		}
 
+		/// <summary>
+		/// Searches for servers on the local network.
+		/// </summary>
 		public void SearchForServers()
 		{
 			if (IsSearching)
@@ -155,6 +206,9 @@ namespace FishNet.Discovery
 			SearchForServersAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
 		}
 
+		/// <summary>
+		/// Stops searching or advertising.
+		/// </summary>
 		public void StopSearchingOrAdvertising()
 		{
 			if (_cancellationTokenSource == null)
@@ -171,6 +225,10 @@ namespace FishNet.Discovery
 			_cancellationTokenSource = null;
 		}
 
+		/// <summary>
+		/// Advertises the server on the local network.
+		/// </summary>
+		/// <param name="cancellationToken">Used to cancel advertising.</param>
 		private async Task AdvertiseServerAsync(CancellationToken cancellationToken)
 		{
 			UdpClient udpClient = null;
@@ -236,6 +294,10 @@ namespace FishNet.Discovery
 			}
 		}
 
+		/// <summary>
+		/// Searches for servers on the local network.
+		/// </summary>
+		/// <param name="cancellationToken">Used to cancel searching.</param>
 		private async Task SearchForServersAsync(CancellationToken cancellationToken)
 		{
 			UdpClient udpClient = null;
@@ -314,16 +376,28 @@ namespace FishNet.Discovery
 			}
 		}
 
+		/// <summary>
+		/// Logs a message if the NetworkManager can log.
+		/// </summary>
+		/// <param name="message">Message to log.</param>
 		private void LogInformation(string message)
 		{
 			if (_networkManager.CanLog(LoggingType.Common)) Debug.Log($"[{nameof(NetworkDiscovery)}] {message}");
 		}
 
+		/// <summary>
+		/// Logs a warning if the NetworkManager can log.
+		/// </summary>
+		/// <param name="message">Message to log.</param>
 		private void LogWarning(string message)
 		{
 			if (_networkManager.CanLog(LoggingType.Warning)) Debug.LogWarning($"[{nameof(NetworkDiscovery)}] {message}");
 		}
 
+		/// <summary>
+		/// Logs an error if the NetworkManager can log.
+		/// </summary>
+		/// <param name="message">Message to log.</param>
 		private void LogError(string message)
 		{
 			if (_networkManager.CanLog(LoggingType.Error)) Debug.LogError($"[{nameof(NetworkDiscovery)}] {message}");
