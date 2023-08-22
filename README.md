@@ -9,7 +9,7 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 3. Create an empty game object
 4. Add a `NetworkManager` component to the game object you just created
 5. Add a `NetworkDiscovery` component to the game object you just created
-6. Set the `secret`, `port`, and `discoveryInterval` fields
+6. Set the `secret`, `port`, and `searchTimeout` fields
 7. Add a `NetworkDiscoveryHUD` component
 8. Enter play mode
 	- If you want to begin advertising a server
@@ -29,17 +29,17 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 3. Create an empty game object
 4. Add a `NetworkManager` component to the game object you just created
 5. Add a `NetworkDiscovery` component to the game object you just created
-6. Set the `secret`, `port`, and `discoveryInterval` fields
+6. Set the `secret`, `port`, and `searchTimeout` fields
 7. Enter play mode
 	- If you want begin advertising a server
 		1. Call `InstanceFinder.ServerManager.StartConnection()`
-		2. Call `FindObjectOfType<NetworkDiscovery>().StartAdvertisingServer()`
+		2. Call `FindObjectOfType<NetworkDiscovery>().AdvertisingServerAsync()`
   	- If you want to stop advertising a server
-    	- Call `FindObjectOfType<NetworkDiscovery>().StopAdvertisingServer()`
+    	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingOrAdvertising()`
   	- If you want to start searching for servers
-    	- Call `FindObjectOfType<NetworkDiscovery>().StartSearchingForServers()`
+    	- Call `FindObjectOfType<NetworkDiscovery>().SearchingForServersAsync()`
   	- If you want to stop seaching for servers
-    	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingForServers()`
+    	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingOrAdvertising()`
 
 ### Planned Features
 
