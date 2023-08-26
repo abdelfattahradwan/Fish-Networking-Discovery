@@ -33,11 +33,11 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 7. Enter play mode
 	- If you want begin advertising a server
 		1. Call `InstanceFinder.ServerManager.StartConnection()`
-		2. Call `FindObjectOfType<NetworkDiscovery>().AdvertisingServerAsync()`
+		2. Call `FindObjectOfType<NetworkDiscovery>().AdvertiseServer()`
   	- If you want to stop advertising a server
     	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingOrAdvertising()`
   	- If you want to start searching for servers
-    	- Call `FindObjectOfType<NetworkDiscovery>().SearchingForServersAsync()`
+    	- Call `FindObjectOfType<NetworkDiscovery>().SearchForServers()`
   	- If you want to stop seaching for servers
     	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingOrAdvertising()`
 
