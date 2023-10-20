@@ -45,10 +45,10 @@ namespace FishNet.Discovery
 		private ushort port;
 
 		/// <summary>
-		/// How long to wait for a response when advertising or searching for servers.
+		/// How long (in seconds) to wait for a response when advertising or searching for servers.
 		/// </summary>
 		[SerializeField]
-		[Tooltip("How long to wait for a response when advertising or searching for servers.")]
+		[Tooltip("How long (in seconds) to wait for a response when advertising or searching for servers.")]
 		private float searchTimeout;
 
 		/// <summary>
