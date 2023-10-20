@@ -10,7 +10,7 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
 4. Add a `NetworkManager` component to the game object you just created
 5. Add a `NetworkDiscovery` component to the game object you just created
 6. Set the `secret`, `port`, and `searchTimeout` fields
-7. Add a `NetworkDiscoveryHUD` component
+7. Add a `NetworkDiscoveryHud` component
 8. Enter play mode
 	- If you want to begin advertising a server
 		1. Press "Start" under the "Server" group
