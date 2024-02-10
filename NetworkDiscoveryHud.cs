@@ -69,7 +69,11 @@ namespace FishNet.Discovery
 
 			GUILayout.EndHorizontal();
 
-			if (_endPoints.Count < 1) return;
+			if (_endPoints.Count < 1)
+			{
+				GUILayout.EndArea();
+				return;
+			}
 
 			GUILayout.Box("Servers");
 
