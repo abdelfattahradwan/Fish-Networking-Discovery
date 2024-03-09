@@ -9,7 +9,7 @@ namespace FishNet.Discovery
 		[SerializeField]
 		private NetworkDiscovery networkDiscovery;
 
-		private readonly List<IPEndPoint> _endPoints = new List<IPEndPoint>();
+		private readonly HashSet<string> _addresses = new HashSet<string>();
 
 		private Vector2 _serversListScrollVector;
 
@@ -17,10 +17,7 @@ namespace FishNet.Discovery
 		{
 			if (networkDiscovery == null) networkDiscovery = FindObjectOfType<NetworkDiscovery>();
 
-			networkDiscovery.ServerFoundCallback += endPoint =>
-			{
-				if (!_endPoints.Contains(endPoint)) _endPoints.Add(endPoint);
-			};
+			networkDiscovery.ServerFoundCallback += endPoint => _addresses.Add(endPoint.Address.ToString());
 		}
 
 		private void OnGUI()
@@ -69,21 +66,25 @@ namespace FishNet.Discovery
 
 			GUILayout.EndHorizontal();
 
-			if (_endPoints.Count < 1) return;
+			if (_addresses.Count < 1)
+			{
+				GUILayout.EndArea();
+
+				return;
+			}
 
 			GUILayout.Box("Servers");
 
 			_serversListScrollVector = GUILayout.BeginScrollView(_serversListScrollVector);
 
-			foreach (IPEndPoint endPoint in _endPoints)
+			foreach (string address in _addresses)
 			{
-				string ipAddress = endPoint.Address.ToString();
+				if (GUILayout.Button(address))
+				{
+					networkDiscovery.StopSearchingOrAdvertising();
 
-				if (!GUILayout.Button(ipAddress)) continue;
-
-				networkDiscovery.StopSearchingOrAdvertising();
-
-				InstanceFinder.ClientManager.StartConnection(ipAddress);
+					InstanceFinder.ClientManager.StartConnection(address);
+				}
 			}
 
 			GUILayout.EndScrollView();
