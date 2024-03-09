@@ -4,6 +4,7 @@ using FishNet.Transporting;
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -82,13 +83,21 @@ namespace FishNet.Discovery
 		/// </summary>
 		public bool IsSearching { get; private set; }
 
+		/// <summary>
+		/// How long (in seconds) to wait for a response when advertising or searching for servers.
+		/// </summary>
+		private float SearchTimeout
+		{
+			get => searchTimeout < 1.0f ? 1.0f : searchTimeout;
+		}
+
 		private void Awake()
 		{
 			if (TryGetComponent(out _networkManager))
 			{
 				LogInformation($"Using NetworkManager on {gameObject.name}.");
 
-				_secretBytes = System.Text.Encoding.UTF8.GetBytes(secret);
+				_secretBytes = Encoding.UTF8.GetBytes(secret);
 
 				_mainThreadSynchronizationContext = SynchronizationContext.Current;
 			}
@@ -247,7 +256,7 @@ namespace FishNet.Discovery
 
 					Task<UdpReceiveResult> receiveTask = udpClient.ReceiveAsync();
 
-					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(searchTimeout), cancellationToken);
+					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(SearchTimeout), cancellationToken);
 
 					Task completedTask = await Task.WhenAny(receiveTask, timeoutTask);
 
@@ -255,7 +264,7 @@ namespace FishNet.Discovery
 					{
 						UdpReceiveResult result = receiveTask.Result;
 
-						string receivedSecret = System.Text.Encoding.UTF8.GetString(result.Buffer);
+						string receivedSecret = Encoding.UTF8.GetString(result.Buffer);
 
 						if (receivedSecret == secret)
 						{
@@ -282,13 +291,13 @@ namespace FishNet.Discovery
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				Debug.LogException(exception, this);
 			}
 			finally
 			{
 				IsAdvertising = false;
-
-				Debug.Log("Closing UDP client...");
+				
+				LogInformation("Closing UDP client...");
 
 				udpClient?.Close();
 			}
@@ -322,7 +331,7 @@ namespace FishNet.Discovery
 
 					Task<UdpReceiveResult> receiveTask = udpClient.ReceiveAsync();
 
-					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(searchTimeout), cancellationToken);
+					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(SearchTimeout), cancellationToken);
 
 					Task completedTask = await Task.WhenAny(receiveTask, timeoutTask);
 
@@ -361,12 +370,12 @@ namespace FishNet.Discovery
 				}
 				else
 				{
-					Debug.LogException(socketException);
+					Debug.LogException(socketException, this);
 				}
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				Debug.LogException(exception, this);
 			}
 			finally
 			{
@@ -382,7 +391,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogInformation(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Common)) Debug.Log($"[{nameof(NetworkDiscovery)}] {message}");
+			if (_networkManager.CanLog(LoggingType.Common)) Debug.Log($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 
 		/// <summary>
@@ -391,7 +400,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogWarning(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Warning)) Debug.LogWarning($"[{nameof(NetworkDiscovery)}] {message}");
+			if (_networkManager.CanLog(LoggingType.Warning)) Debug.LogWarning($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 
 		/// <summary>
@@ -400,7 +409,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogError(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Error)) Debug.LogError($"[{nameof(NetworkDiscovery)}] {message}");
+			if (_networkManager.CanLog(LoggingType.Error)) Debug.LogError($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 	}
 }
