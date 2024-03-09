@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net;
 using UnityEngine;
 
 namespace FishNet.Discovery
@@ -8,15 +9,18 @@ namespace FishNet.Discovery
 		[SerializeField]
 		private NetworkDiscovery networkDiscovery;
 
-		private readonly HashSet<string> _addresses = new HashSet<string>();
+		private readonly List<IPEndPoint> _endPoints = new List<IPEndPoint>();
 
-		private Vector2 _serverListScrollVector;
+		private Vector2 _serversListScrollVector;
 
 		private void Start()
 		{
 			if (networkDiscovery == null) networkDiscovery = FindObjectOfType<NetworkDiscovery>();
 
-			networkDiscovery.ServerFoundCallback += endPoint => _addresses.Add(endPoint.Address.ToString());
+			networkDiscovery.ServerFoundCallback += endPoint =>
+			{
+				if (!_endPoints.Contains(endPoint)) _endPoints.Add(endPoint);
+			};
 		}
 
 		private void OnGUI()
@@ -65,20 +69,21 @@ namespace FishNet.Discovery
 
 			GUILayout.EndHorizontal();
 
-			if (_addresses.Count < 1) return;
+			if (_endPoints.Count < 1) return;
 
 			GUILayout.Box("Servers");
 
-			_serverListScrollVector = GUILayout.BeginScrollView(_serverListScrollVector);
+			_serversListScrollVector = GUILayout.BeginScrollView(_serversListScrollVector);
 
-			foreach (string address in _addresses)
+			foreach (IPEndPoint endPoint in _endPoints)
 			{
-				if (GUILayout.Button(address))
-				{
-					networkDiscovery.StopSearchingOrAdvertising();
+				string ipAddress = endPoint.Address.ToString();
 
-					InstanceFinder.ClientManager.StartConnection(address);
-				}
+				if (!GUILayout.Button(ipAddress)) continue;
+
+				networkDiscovery.StopSearchingOrAdvertising();
+
+				InstanceFinder.ClientManager.StartConnection(ipAddress);
 			}
 
 			GUILayout.EndScrollView();
