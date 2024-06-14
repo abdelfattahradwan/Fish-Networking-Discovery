@@ -130,13 +130,6 @@ namespace FishNet.Discovery
 			Shutdown();
 		}
 
-		private void Update()
-		{
-			if (Input.GetKeyDown(KeyCode.S)) AdvertiseServer();
-
-			if (Input.GetKeyDown(KeyCode.C)) SearchForServers();
-		}
-
 		/// <summary>
 		/// Shuts down the NetworkDiscovery.
 		/// </summary>
