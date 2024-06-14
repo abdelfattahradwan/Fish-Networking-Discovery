@@ -86,10 +86,7 @@ namespace FishNet.Discovery
 		/// <summary>
 		/// How long (in seconds) to wait for a response when advertising or searching for servers.
 		/// </summary>
-		private float SearchTimeout
-		{
-			get => searchTimeout < 1.0f ? 1.0f : searchTimeout;
-		}
+		private float SearchTimeout => searchTimeout < 1.0f ? 1.0f : searchTimeout;
 
 		private void Awake()
 		{
@@ -169,7 +166,7 @@ namespace FishNet.Discovery
 
 		private void ClientConnectionStateChangedEventHandler(ClientConnectionStateArgs args)
 		{
-			if (_networkManager.IsServer) return;
+			if (_networkManager.IsServerStarted) return;
 
 			if (args.ConnectionState == LocalConnectionState.Started)
 			{
@@ -250,7 +247,7 @@ namespace FishNet.Discovery
 
 				while (!cancellationToken.IsCancellationRequested)
 				{
-					if (udpClient == null) udpClient = new UdpClient(port);
+					udpClient ??= new UdpClient(port);
 
 					LogInformation("Waiting for request...");
 
@@ -296,7 +293,7 @@ namespace FishNet.Discovery
 			finally
 			{
 				IsAdvertising = false;
-				
+
 				LogInformation("Closing UDP client...");
 
 				udpClient?.Close();
@@ -317,11 +314,11 @@ namespace FishNet.Discovery
 
 				IsSearching = true;
 
-				IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, port);
+				IPEndPoint broadcastEndPoint = new(IPAddress.Broadcast, port);
 
 				while (!cancellationToken.IsCancellationRequested)
 				{
-					if (udpClient == null) udpClient = new UdpClient();
+					udpClient ??= new UdpClient();
 
 					LogInformation("Sending request...");
 
@@ -391,7 +388,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogInformation(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Common)) Debug.Log($"[{nameof(NetworkDiscovery)}] {message}", this);
+			if (NetworkManagerExtensions.CanLog(LoggingType.Common)) Debug.Log($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 
 		/// <summary>
@@ -400,7 +397,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogWarning(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Warning)) Debug.LogWarning($"[{nameof(NetworkDiscovery)}] {message}", this);
+			if (NetworkManagerExtensions.CanLog(LoggingType.Warning)) Debug.LogWarning($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 
 		/// <summary>
@@ -409,7 +406,7 @@ namespace FishNet.Discovery
 		/// <param name="message">Message to log.</param>
 		private void LogError(string message)
 		{
-			if (_networkManager.CanLog(LoggingType.Error)) Debug.LogError($"[{nameof(NetworkDiscovery)}] {message}", this);
+			if (NetworkManagerExtensions.CanLog(LoggingType.Error)) Debug.LogError($"[{nameof(NetworkDiscovery)}] {message}", this);
 		}
 	}
 }
