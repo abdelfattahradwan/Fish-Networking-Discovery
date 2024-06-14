@@ -8,13 +8,13 @@ namespace FishNet.Discovery
 		[SerializeField]
 		private NetworkDiscovery networkDiscovery;
 
-		private readonly HashSet<string> _addresses = new HashSet<string>();
+		private readonly HashSet<string> _addresses = new();
 
 		private Vector2 _serversListScrollVector;
 
 		private void Start()
 		{
-			if (networkDiscovery == null) networkDiscovery = FindObjectOfType<NetworkDiscovery>();
+			if (networkDiscovery == null || !TryGetComponent(out networkDiscovery)) networkDiscovery = FindAnyObjectByType<NetworkDiscovery>();
 
 			networkDiscovery.ServerFoundCallback += endPoint => _addresses.Add(endPoint.Address.ToString());
 		}
