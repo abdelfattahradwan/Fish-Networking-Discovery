@@ -333,7 +333,7 @@ namespace FishNet.Discovery
 						{
 							LogInformation($"Received response from {result.RemoteEndPoint}.");
 
-							_mainThreadSynchronizationContext.Post(delegate { ServerFoundCallback?.Invoke(result.RemoteEndPoint); }, null);
+							_mainThreadSynchronizationContext.Post(_ => ServerFoundCallback?.Invoke(result.RemoteEndPoint), null);
 						}
 						else
 						{
