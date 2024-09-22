@@ -22,19 +22,19 @@ namespace FishNet.Discovery
 		private static readonly byte[] OkBytes = { 1 };
 
 		/// <summary>
-		/// NetworkManager to use.
+		/// The <see cref="FishNet.Managing.NetworkManager"/> to use.
 		/// </summary>
 		private NetworkManager _networkManager;
 
 		/// <summary>
-		/// Secret to use when advertising or searching for servers.
+		/// The secret to use when advertising or searching for servers.
 		/// </summary>
 		[SerializeField]
 		[Tooltip("Secret to use when advertising or searching for servers.")]
 		private string secret;
 
 		/// <summary>
-		/// Byte-representation of the secret to use when advertising or searching for servers.
+		/// A byte-representation of the secret to use when advertising or searching for servers.
 		/// </summary>
 		private byte[] _secretBytes;
 
@@ -59,7 +59,7 @@ namespace FishNet.Discovery
 		private bool automatic;
 
 		/// <summary>
-		/// SynchronizationContext of the main thread.
+		/// The synchronizationContext of the main thread.
 		/// </summary>
 		private SynchronizationContext _mainThreadSynchronizationContext;
 
@@ -86,7 +86,10 @@ namespace FishNet.Discovery
 		/// <summary>
 		/// How long (in seconds) to wait for a response when advertising or searching for servers.
 		/// </summary>
-		private float SearchTimeout => searchTimeout < 1.0f ? 1.0f : searchTimeout;
+		private float SearchTimeout
+		{
+			get => searchTimeout < 1.0f ? 1.0f : searchTimeout;
+		}
 
 		private void Awake()
 		{
@@ -131,7 +134,7 @@ namespace FishNet.Discovery
 		}
 
 		/// <summary>
-		/// Shuts down the NetworkDiscovery.
+		/// Shuts the NetworkDiscovery.
 		/// </summary>
 		private void Shutdown()
 		{
@@ -169,6 +172,19 @@ namespace FishNet.Discovery
 			{
 				SearchForServers();
 			}
+		}
+
+		/// <summary>
+		/// Updates the secret.
+		/// </summary>
+		/// <param name="newSecret">New secret.</param>
+		public void UpdateSecret(string newSecret)
+		{
+			if (secret == newSecret) return;
+
+			secret = newSecret;
+
+			_secretBytes = Encoding.UTF8.GetBytes(secret);
 		}
 
 		/// <summary>
