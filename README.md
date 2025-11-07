@@ -41,11 +41,15 @@ A very simple LAN network discovery component for Fish-Networking ([Asset Store]
   	- If you want to stop seaching for servers
     	- Call `FindObjectOfType<NetworkDiscovery>().StopSearchingOrAdvertising()`
 
+### Compatibility
+
+- All Unity versions that support .NET Standard 2.0 (or higher) are supported.
+- All modern Fish-Networking versions are supported.
+
 ### Planned Features
 
 - [x] Automatically start/stop advertising server
 - [ ] Automatically remove servers that are no longer alive
-- [ ] Introduce Unity coroutines for all `NetworkDiscovery` methods
 
 ### Donating
 
