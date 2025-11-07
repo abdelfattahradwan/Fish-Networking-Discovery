@@ -56,6 +56,7 @@ namespace FishNet.Discovery
 		/// If true, will automatically start advertising or searching for servers when the NetworkManager starts or stops.
 		/// </summary>
 		[SerializeField]
+		[Tooltip("If true, will automatically start advertising or searching for servers when the NetworkManager starts or stops.")]
 		private bool automatic;
 
 		/// <summary>
