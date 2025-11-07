@@ -3,13 +3,26 @@ using UnityEngine;
 
 namespace FishNet.Discovery
 {
+	/// <summary>
+	/// A simple UI for NetworkDiscovery.
+	/// </summary>
 	public sealed class NetworkDiscoveryHud : MonoBehaviour
 	{
+		/// <summary>
+		/// NetworkDiscovery to use. If not set will attempt to find one.
+		/// </summary>
 		[SerializeField]
+		[Tooltip("NetworkDiscovery to use. If not set will attempt to find one.")]
 		private NetworkDiscovery networkDiscovery;
 
+		/// <summary>
+		/// A collection of server addresses discovered on the local network.
+		/// </summary>
 		private readonly HashSet<string> _addresses = new();
 
+		/// <summary>
+		/// Vector2 used to manage the scroll position of the servers list in the UI.
+		/// </summary>
 		private Vector2 _serversListScrollVector;
 
 		private void Start()
