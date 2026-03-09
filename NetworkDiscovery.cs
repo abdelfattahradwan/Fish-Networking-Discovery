@@ -271,9 +271,7 @@ namespace FishNet.Discovery
 					{
 						UdpReceiveResult result = receiveTask.Result;
 
-						string receivedSecret = Encoding.UTF8.GetString(result.Buffer);
-
-						if (receivedSecret == secret)
+						if (result.Buffer.AsSpan().SequenceEqual(_secretBytes))
 						{
 							LogInformation($"Received request from {result.RemoteEndPoint}.");
 
