@@ -98,7 +98,7 @@ namespace FishNet.Discovery
 			{
 				LogInformation($"Using NetworkManager on {gameObject.name}.");
 
-				_secretBytes = Encoding.UTF8.GetBytes(secret);
+				UpdateSecretBytes();
 
 				_mainThreadSynchronizationContext = SynchronizationContext.Current;
 			}
@@ -112,7 +112,7 @@ namespace FishNet.Discovery
 
 		private void OnEnable()
 		{
-			if (!automatic) return;
+			if (!automatic || _networkManager == null) return;
 
 			_networkManager.ServerManager.OnServerConnectionState += ServerConnectionStateChangedEventHandler;
 
@@ -185,7 +185,7 @@ namespace FishNet.Discovery
 
 			secret = newSecret;
 
-			_secretBytes = Encoding.UTF8.GetBytes(secret);
+			UpdateSecretBytes();
 		}
 
 		/// <summary>
@@ -193,6 +193,8 @@ namespace FishNet.Discovery
 		/// </summary>
 		public void AdvertiseServer()
 		{
+			if (!CanStartDiscovery()) return;
+
 			if (IsAdvertising)
 			{
 				LogWarning("Server is already being advertised.");
@@ -200,9 +202,20 @@ namespace FishNet.Discovery
 				return;
 			}
 
-			_cancellationTokenSource = new CancellationTokenSource();
+			if (IsSearching)
+			{
+				LogWarning("Cannot advertise server while searching for servers.");
 
-			AdvertiseServerAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+				return;
+			}
+
+			CancellationTokenSource cancellationTokenSource = new();
+
+			_cancellationTokenSource = cancellationTokenSource;
+
+			IsAdvertising = true;
+
+			_ = AdvertiseServerAsync(cancellationTokenSource);
 		}
 
 		/// <summary>
@@ -210,6 +223,8 @@ namespace FishNet.Discovery
 		/// </summary>
 		public void SearchForServers()
 		{
+			if (!CanStartDiscovery()) return;
+
 			if (IsSearching)
 			{
 				LogWarning("Already searching for servers.");
@@ -217,9 +232,20 @@ namespace FishNet.Discovery
 				return;
 			}
 
-			_cancellationTokenSource = new CancellationTokenSource();
+			if (IsAdvertising)
+			{
+				LogWarning("Cannot search for servers while advertising server.");
 
-			SearchForServersAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+				return;
+			}
+
+			CancellationTokenSource cancellationTokenSource = new();
+
+			_cancellationTokenSource = cancellationTokenSource;
+
+			IsSearching = true;
+
+			_ = SearchForServersAsync(cancellationTokenSource);
 		}
 
 		/// <summary>
@@ -227,72 +253,80 @@ namespace FishNet.Discovery
 		/// </summary>
 		public void StopSearchingOrAdvertising()
 		{
-			if (_cancellationTokenSource == null)
-			{
-				LogWarning("Not searching or advertising.");
-
-				return;
-			}
-
-			_cancellationTokenSource.Cancel();
-
-			_cancellationTokenSource.Dispose();
-
-			_cancellationTokenSource = null;
+			_cancellationTokenSource?.Cancel();
 		}
 
 		/// <summary>
 		/// Advertises the server on the local network.
 		/// </summary>
-		/// <param name="cancellationToken">Used to cancel advertising.</param>
-		private async Task AdvertiseServerAsync(CancellationToken cancellationToken)
+		/// <param name="cancellationTokenSource">Used to cancel advertising.</param>
+		private async Task AdvertiseServerAsync(CancellationTokenSource cancellationTokenSource)
 		{
 			UdpClient udpClient = null;
+
+			Task<UdpReceiveResult> receiveTask = null;
+
+			CancellationToken cancellationToken = cancellationTokenSource.Token;
 
 			try
 			{
 				LogInformation("Started advertising server.");
 
-				IsAdvertising = true;
+				udpClient = new UdpClient(port);
+
+				receiveTask = udpClient.ReceiveAsync();
+
+				LogInformation("Waiting for request...");
 
 				while (!cancellationToken.IsCancellationRequested)
 				{
-					udpClient ??= new UdpClient(port);
-
-					LogInformation("Waiting for request...");
-
-					Task<UdpReceiveResult> receiveTask = udpClient.ReceiveAsync();
-
 					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(SearchTimeout), cancellationToken);
 
 					Task completedTask = await Task.WhenAny(receiveTask, timeoutTask);
 
-					if (completedTask == receiveTask)
+					if (completedTask != receiveTask)
 					{
-						UdpReceiveResult result = receiveTask.Result;
+						if (cancellationToken.IsCancellationRequested) break;
 
-						if (result.Buffer.AsSpan().SequenceEqual(_secretBytes))
-						{
-							LogInformation($"Received request from {result.RemoteEndPoint}.");
+						continue;
+					}
 
-							await udpClient.SendAsync(OkBytes, OkBytes.Length, result.RemoteEndPoint);
-						}
-						else
-						{
-							LogWarning($"Received invalid request from {result.RemoteEndPoint}.");
-						}
+					UdpReceiveResult result = await receiveTask;
+
+					if (result.Buffer.AsSpan().SequenceEqual(_secretBytes))
+					{
+						LogInformation($"Received request from {result.RemoteEndPoint}.");
+
+						await udpClient.SendAsync(OkBytes, OkBytes.Length, result.RemoteEndPoint);
 					}
 					else
 					{
-						LogInformation("Timed out. Retrying...");
-
-						udpClient.Close();
-
-						udpClient = null;
+						LogWarning($"Received invalid request from {result.RemoteEndPoint}.");
 					}
+
+					if (cancellationToken.IsCancellationRequested) break;
+
+					receiveTask = udpClient.ReceiveAsync();
+
+					LogInformation("Waiting for request...");
 				}
 
 				LogInformation("Stopped advertising server.");
+			}
+			catch (OperationCanceledException)
+			{
+				LogInformation("Stopped advertising server.");
+			}
+			catch (SocketException socketException)
+			{
+				if (socketException.SocketErrorCode == SocketError.AddressAlreadyInUse)
+				{
+					LogError($"Unable to advertise server. Port {port} is already in use.");
+				}
+				else
+				{
+					Debug.LogException(socketException, this);
+				}
 			}
 			catch (Exception exception)
 			{
@@ -300,33 +334,40 @@ namespace FishNet.Discovery
 			}
 			finally
 			{
-				IsAdvertising = false;
-
-				LogInformation("Closing UDP client...");
+				if (receiveTask is { IsCompleted: false })
+				{
+					ObserveTask(receiveTask);
+				}
 
 				udpClient?.Close();
+
+				IsAdvertising = false;
+
+				CompleteOperation(cancellationTokenSource);
 			}
 		}
 
 		/// <summary>
 		/// Searches for servers on the local network.
 		/// </summary>
-		/// <param name="cancellationToken">Used to cancel searching.</param>
-		private async Task SearchForServersAsync(CancellationToken cancellationToken)
+		/// <param name="cancellationTokenSource">Used to cancel searching.</param>
+		private async Task SearchForServersAsync(CancellationTokenSource cancellationTokenSource)
 		{
 			UdpClient udpClient = null;
+
+			Task<UdpReceiveResult> receiveTask = null;
+
+			CancellationToken cancellationToken = cancellationTokenSource.Token;
 
 			try
 			{
 				LogInformation("Started searching for servers.");
 
-				IsSearching = true;
-
 				IPEndPoint broadcastEndPoint = new(IPAddress.Broadcast, port);
 
 				while (!cancellationToken.IsCancellationRequested)
 				{
-					udpClient ??= new UdpClient();
+					udpClient ??= CreateSearchUdpClient();
 
 					LogInformation("Sending request...");
 
@@ -334,7 +375,7 @@ namespace FishNet.Discovery
 
 					LogInformation("Waiting for response...");
 
-					Task<UdpReceiveResult> receiveTask = udpClient.ReceiveAsync();
+					receiveTask = udpClient.ReceiveAsync();
 
 					Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(SearchTimeout), cancellationToken);
 
@@ -342,13 +383,15 @@ namespace FishNet.Discovery
 
 					if (completedTask == receiveTask)
 					{
-						UdpReceiveResult result = receiveTask.Result;
+						UdpReceiveResult result = await receiveTask;
 
-						if (result.Buffer.Length == 1 && result.Buffer[0] == 1)
+						receiveTask = null;
+
+						if (result.Buffer.Length == OkBytes.Length && result.Buffer[0] == OkBytes[0])
 						{
 							LogInformation($"Received response from {result.RemoteEndPoint}.");
 
-							_mainThreadSynchronizationContext.Post(_ => ServerFoundCallback?.Invoke(result.RemoteEndPoint), null);
+							PostServerFound(result.RemoteEndPoint);
 						}
 						else
 						{
@@ -357,7 +400,13 @@ namespace FishNet.Discovery
 					}
 					else
 					{
+						if (cancellationToken.IsCancellationRequested) break;
+
 						LogInformation("Timed out. Retrying...");
+
+						ObserveTask(receiveTask);
+
+						receiveTask = null;
 
 						udpClient.Close();
 
@@ -365,6 +414,10 @@ namespace FishNet.Discovery
 					}
 				}
 
+				LogInformation("Stopped searching for servers.");
+			}
+			catch (OperationCanceledException)
+			{
 				LogInformation("Stopped searching for servers.");
 			}
 			catch (SocketException socketException)
@@ -384,10 +437,93 @@ namespace FishNet.Discovery
 			}
 			finally
 			{
-				IsSearching = false;
+				if (receiveTask is { IsCompleted: false })
+				{
+					ObserveTask(receiveTask);
+				}
 
 				udpClient?.Close();
+
+				IsSearching = false;
+
+				CompleteOperation(cancellationTokenSource);
 			}
+		}
+
+		/// <summary>
+		/// Creates a UDP client for searching.
+		/// </summary>
+		/// <returns>Configured UDP client.</returns>
+		private static UdpClient CreateSearchUdpClient()
+		{
+			UdpClient udpClient = new();
+
+			udpClient.EnableBroadcast = true;
+
+			return udpClient;
+		}
+
+		/// <summary>
+		/// Completes the active operation if it still owns the cancellation token source.
+		/// </summary>
+		/// <param name="cancellationTokenSource">Cancellation token source to complete.</param>
+		private void CompleteOperation(CancellationTokenSource cancellationTokenSource)
+		{
+			if (ReferenceEquals(_cancellationTokenSource, cancellationTokenSource)) _cancellationTokenSource = null;
+
+			cancellationTokenSource.Dispose();
+		}
+
+		/// <summary>
+		/// Updates the byte representation of the secret.
+		/// </summary>
+		private void UpdateSecretBytes()
+		{
+			_secretBytes = Encoding.UTF8.GetBytes(secret ?? string.Empty);
+		}
+
+		/// <summary>
+		/// Returns true if discovery can start.
+		/// </summary>
+		private bool CanStartDiscovery()
+		{
+			if (port != 0) return true;
+
+			LogError("Port must be greater than 0.");
+
+			return false;
+		}
+
+		/// <summary>
+		/// Posts a found server to the main thread if possible.
+		/// </summary>
+		/// <param name="remoteEndPoint">Server endpoint.</param>
+		private void PostServerFound(IPEndPoint remoteEndPoint)
+		{
+			if (_mainThreadSynchronizationContext != null)
+			{
+				_mainThreadSynchronizationContext.Post(_ => ServerFoundCallback?.Invoke(remoteEndPoint), null);
+			}
+			else
+			{
+				ServerFoundCallback?.Invoke(remoteEndPoint);
+			}
+		}
+
+		/// <summary>
+		/// Observes a faulted task to prevent unobserved task exceptions.
+		/// </summary>
+		/// <param name="task">Task to observe.</param>
+		private static void ObserveTask(Task task)
+		{
+			if (task.IsCompleted)
+			{
+				_ = task.Exception;
+
+				return;
+			}
+
+			task.ContinueWith(static completedTask => _ = completedTask.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 		}
 
 		/// <summary>
