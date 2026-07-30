@@ -272,7 +272,15 @@ namespace FishNet.Discovery
 			{
 				LogInformation("Started advertising server.");
 
-				udpClient = new UdpClient(port);
+				udpClient = new UdpClient();
+
+				#if UNITY_EDITOR
+
+				udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+				#endif
+
+				udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));
 
 				receiveTask = udpClient.ReceiveAsync();
 
