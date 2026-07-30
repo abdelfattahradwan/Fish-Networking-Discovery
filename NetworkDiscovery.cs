@@ -257,7 +257,12 @@ namespace FishNet.Discovery
 
 				while (!cancellationToken.IsCancellationRequested)
 				{
-					udpClient ??= new UdpClient(port);
+					if (udpClient == null)
+					{
+						udpClient = new UdpClient();
+						udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+						udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, port));
+					}
 
 					LogInformation("Waiting for request...");
 
